@@ -7,6 +7,7 @@ const userRoutes = require('./routes/userRoutes');
 const feedRoutes = require('./routes/feedRoutes');
 const articleRoutes = require('./routes/articleRoutes');
 const { startScheduler } = require('./services/scheduler');
+const bot = require('./telegram/bot');
 
 dotenv.config();
 
@@ -40,6 +41,20 @@ const startServer = async () => {
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);
       startScheduler(); // ✅ safe
+      
+      // Set telegram webhook
+      if (process.env.BACKEND_URL && process.env.TELEGRAM_BOT_TOKEN) {
+        const webhookUrl = `${process.env.BACKEND_URL}/api/telegram/webhook`;
+        bot.setWebHook(webhookUrl)
+          .then(() => {
+            console.log(`Telegram webhook set to ${webhookUrl}`);
+          })
+          .catch((err) => {
+            console.error("Error setting telegram webhook:", err.message);
+          });
+      } else {
+        console.warn("Skipping telegram webhook setup. BACKEND_URL and/or TELEGRAM_BOT_TOKEN not set.");
+      }
     });
 
   } catch (err) {
