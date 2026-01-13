@@ -8,8 +8,9 @@ import {
   FiMail,
   FiLock,
   FiArrowRight,
-  FiCheckCircle,
-  FiXCircle,
+    FiXCircle,
+  FiCheckCircle
+
 } from "react-icons/fi";
 
 // Notification
