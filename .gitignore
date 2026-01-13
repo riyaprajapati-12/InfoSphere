@@ -1,0 +1,23 @@
+# Dependencies
+/node_modules
+/backend/node_modules
+/frontend/node_modules
+
+# Build output
+/dist
+/build
+
+# Logs
+*.log
+
+# Environment variables
+.env
+backend/src/.env
+
+# IDE and editor directories
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
