@@ -18,8 +18,8 @@ function App() {
          <AuthProvider>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/verify-otp/:email" element={<OtpVerificationWrapper />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/article/:id" element={<ArticleDetail />} />
