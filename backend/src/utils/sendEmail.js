@@ -5,20 +5,21 @@ const sendEmail = async (options) => {
         const transporter = nodemailer.createTransport({
             host: "smtp.gmail.com",
             port: 587,
-            secure: false, // Must be false for port 587
+            secure: false, 
             auth: {
                 user: process.env.EMAIL_USER,
-                // Make sure to remove all spaces from the App Password in Render
-                pass: process.env.EMAIL_PASS, 
+                pass: process.env.EMAIL_PASS, // Make sure spaces are removed in Render dashboard!
             },
             tls: {
-                // This bypasses network-level certificate issues common on cloud servers
                 rejectUnauthorized: false
-            }
+            },
+            connectionTimeout: 10000, // 10 seconds
+            greetingTimeout: 10000,
+            socketTimeout: 10000
         });
 
         const mailOptions = {
-            from: `InfoSphere <${process.env.EMAIL_USER}>`,
+            from: `"InfoSphere" <${process.env.EMAIL_USER}>`,
             to: options.email,
             subject: options.subject,
             text: options.message,
@@ -27,8 +28,7 @@ const sendEmail = async (options) => {
         await transporter.sendMail(mailOptions);
         console.log('Email sent successfully');
     } catch (error) {
-        // Detailed error logging to help you debug in the Render dashboard
-        console.error('Error sending email detail:', error);
+        console.error('Nodemailer Detailed Error:', error);
         throw new Error('Failed to send email');
     }
 };
