@@ -3,11 +3,16 @@ const nodemailer = require('nodemailer');
 const sendEmail = async (options) => {
     try {
         const transporter = nodemailer.createTransport({
-            service: 'Gmail',
+            host: "smtp.gmail.com",
+            port: 587,
+            secure: false, // Must be false for port 587
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS, // use App Password if 2FA enabled
+                pass: process.env.EMAIL_PASS, // Ensure no spaces here
             },
+            tls: {
+                rejectUnauthorized: false // Helps bypass potential network restrictions
+            }
         });
 
         const mailOptions = {
@@ -21,7 +26,7 @@ const sendEmail = async (options) => {
         console.log('Email sent successfully');
     } catch (error) {
         console.error('Error sending email:', error);
-        throw new Error('Failed to send email'); // This will help you see the real error
+        throw new Error('Failed to send email');
     }
 };
 
