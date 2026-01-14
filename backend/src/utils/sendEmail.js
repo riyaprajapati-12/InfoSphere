@@ -1,35 +1,34 @@
 const nodemailer = require('nodemailer');
 
 const sendEmail = async (options) => {
+    // Debugging ke liye log add karein
+    console.log("Attempting to send email to:", options.email);
+
+    const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 465, // SSL port try karte hain
+        secure: true, 
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS, 
+        },
+        debug: true, // Console mein detail dikhayega
+        logger: true  // SMTP traffic log kareya
+    });
+
+    const mailOptions = {
+        from: `"InfoSphere" <${process.env.EMAIL_USER}>`,
+        to: options.email,
+        subject: options.subject,
+        text: options.message,
+    };
+
     try {
-        const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 587,
-            secure: false, 
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS, // Make sure spaces are removed in Render dashboard!
-            },
-            tls: {
-                rejectUnauthorized: false
-            },
-            connectionTimeout: 10000, // 10 seconds
-            greetingTimeout: 10000,
-            socketTimeout: 10000
-        });
-
-        const mailOptions = {
-            from: `"InfoSphere" <${process.env.EMAIL_USER}>`,
-            to: options.email,
-            subject: options.subject,
-            text: options.message,
-        };
-
         await transporter.sendMail(mailOptions);
-        console.log('Email sent successfully');
+        console.log('Email successfully sent');
     } catch (error) {
-        console.error('Nodemailer Detailed Error:', error);
-        throw new Error('Failed to send email');
+        console.error('Nodemailer Error Details:', error);
+        throw error; // Controller ko error pass karein
     }
 };
 
