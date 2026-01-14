@@ -8,10 +8,12 @@ const sendEmail = async (options) => {
             secure: false, // Must be false for port 587
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS, // Ensure no spaces here
+                // Make sure to remove all spaces from the App Password in Render
+                pass: process.env.EMAIL_PASS, 
             },
             tls: {
-                rejectUnauthorized: false // Helps bypass potential network restrictions
+                // This bypasses network-level certificate issues common on cloud servers
+                rejectUnauthorized: false
             }
         });
 
@@ -25,7 +27,8 @@ const sendEmail = async (options) => {
         await transporter.sendMail(mailOptions);
         console.log('Email sent successfully');
     } catch (error) {
-        console.error('Error sending email:', error);
+        // Detailed error logging to help you debug in the Render dashboard
+        console.error('Error sending email detail:', error);
         throw new Error('Failed to send email');
     }
 };
