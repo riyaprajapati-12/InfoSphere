@@ -14,27 +14,20 @@ export default function ArticleDetail() {
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        // 1. Article Fetch Karein
-        const res = await API.get(`/api/articles/${id}`);
-        setArticle(res.data);
-
-        // 2. 🔥 Interest Tracking & Mark as Read
-        // Backend controller khud keywords track karega jab ye hit hoga
-        await API.patch(`/api/articles/${id}/read`);
-        
-      } catch (err) {
-        // 'ot' error se bachne ke liye detailed logging
-        console.error("Failed to fetch or track article:", err.response?.data?.message || err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) loadData();
-  }, [id]);
+  const loadArticle = async () => {
+    try {
+      setLoading(true);
+      // Sirf ek call se Article fetch hoga aur Interest track ho jayega
+      const res = await API.get(`/api/articles/${id}`); 
+      setArticle(res.data);
+    } catch (err) {
+      console.error("Fetch failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  if (id) loadArticle();
+}, [id]);
 
   if (loading) return (
     <div className="h-screen bg-[#0D1117] flex flex-col items-center justify-center gap-4">
