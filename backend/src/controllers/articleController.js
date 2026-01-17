@@ -33,21 +33,29 @@ const getArticles = async (req, res) => {
 
 
 
+// controllers/articleController.js
+
 const markAsRead = async (req, res) => {
     try {
         const article = await Article.findById(req.params.id);
-        if (!article) {
-            return res.status(404).json({ message: 'Article not found' });
-        }
-        if (article.userId.toString() !== req.user.id) {
-            return res.status(401).json({ message: 'Not authorized' });
-        }
+        if (!article) return res.status(404).json({ message: 'Article not found' });
+
         article.isRead = true;
         await article.save();
-        res.status(200).json(article);
+
+        // 🔥 Interest Tracking Logic
+        const user = await User.findById(req.user.id);
+        if (article.keywords && article.keywords.length > 0) {
+            article.keywords.forEach(keyword => {
+                const currentScore = user.keywordProfile.get(keyword) || 0;
+                user.keywordProfile.set(keyword, currentScore + 1);
+            });
+            await user.save();
+        }
+
+        res.status(200).json({ message: "Article read and interest tracked" });
     } catch (error) {
-        console.error('Error marking article as read:', error);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Tracking failed' });
     }
 };
 // Is logic ko articleController.js mein daalein
