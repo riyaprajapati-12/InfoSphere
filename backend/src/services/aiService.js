@@ -72,7 +72,7 @@ let lastCallTime = 0;
 const COOLDOWN = 2000; // Sirf 2 seconds ka protection
 
 async function generateSummaryAndKeywords(content) {
-  if (!content || content.length < 800) return null;
+  if (!content || content.length < 400) return null;
 
   if (groqLocked) {
     console.warn("🚫 Groq locked due to Rate Limit");
