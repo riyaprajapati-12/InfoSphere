@@ -1,5 +1,5 @@
 const Article = require('../models/article');
-
+const User = require('../models/user')
 const getArticles = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;
