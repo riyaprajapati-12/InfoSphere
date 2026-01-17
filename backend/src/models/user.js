@@ -23,6 +23,11 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true,
   },
+  keywordProfile: {
+    type: Map,
+    of: Number,
+    default: {}
+  },
 
   // 🔹 Telegram fields
   telegramId: {

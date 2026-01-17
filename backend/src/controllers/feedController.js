@@ -1,7 +1,8 @@
 const Feed = require('../models/feed');
 const Parser = require('rss-parser');
 const parser = new Parser();
-
+const User = require("../models/user");
+const Article = require('../models/article');
 const addFeed = async (req, res) => {
     const { feedUrl } = req.body;
     const userId = req.user.id;
@@ -57,4 +58,36 @@ const deleteFeed = async (req, res) => {
     }
 };
 
-module.exports = { addFeed, getUserFeeds, deleteFeed };
+
+
+const getPersonalizedFeed = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    // User ke top interest keywords nikalo
+    const sortedKeywords = [...user.keywordProfile.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(entry => entry[0])
+      .slice(0, 5);
+
+    // Agar user naya hai aur koi history nahi hai
+    if (sortedKeywords.length === 0) {
+      const trending = await Article.find({ userId: req.user.id }) // Article model use karein
+        .sort({ publishedAt: -1 })
+        .limit(20);
+      return res.json(trending);
+    }
+
+    // Personalized articles dikhao jo user ke interests se match karein
+    const feed = await Article.find({
+      userId: req.user.id,
+      keywords: { $in: sortedKeywords }
+    }).sort({ publishedAt: -1 });
+
+    res.json(feed);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching personalized feed" });
+  }
+};
+
+module.exports = { addFeed, getUserFeeds, deleteFeed, getPersonalizedFeed  };

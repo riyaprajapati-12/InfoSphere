@@ -6,6 +6,7 @@ import { FiBookOpen, FiClock, FiArrowRight, FiInbox, FiCircle } from "react-icon
 
 const TABS = [
   { key: "latest", label: "Latest" },
+  { key: "personalized", label: "For You" },
   { key: "unread", label: "Unread" },
   { key: "read", label: "Read" },
 ];
@@ -22,10 +23,16 @@ const RecentArticles = () => {
     try {
       setLoading(true);
       const params = { page, limit: 10 };
+     // Check karein ki URL konsa use karna hai
+    let endpoint = "/api/articles";
+    if (tab === "personalized") {
+      endpoint = "/api/feeds/personalized"; // ✨ Backend route
+    } else {
       if (tab === "read") params.isRead = true;
       if (tab === "unread") params.isRead = false;
+    }
 
-      const res = await API.get("/api/articles", { params, withCredentials: true });
+    const res = await API.get(endpoint, { params, withCredentials: true });
       const newArticles = res.data.articles || [];
 
       setArticles((prev) => (reset ? newArticles : [...prev, ...newArticles]));

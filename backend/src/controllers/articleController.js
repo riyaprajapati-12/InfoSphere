@@ -50,18 +50,29 @@ const markAsRead = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+// Is logic ko articleController.js mein daalein
 const getSingleArticle = async (req, res) => {
-  const article = await Article.findById(req.params.id);
+  try {
+    const article = await Article.findById(req.params.id);
 
-  if (!article) {
-    return res.status(404).json({ message: "Article not found" });
+    if (!article || article.userId.toString() !== req.user.id) {
+      return res.status(404).json({ message: "Article not found or unauthorized" });
+    }
+
+    // 🔥 User ka interest track karein (Recommendation Logic)
+    const user = await User.findById(req.user.id);
+    if (article.keywords && article.keywords.length > 0) {
+      article.keywords.forEach(keyword => {
+        const currentScore = user.keywordProfile.get(keyword) || 0;
+        user.keywordProfile.set(keyword, currentScore + 1);
+      });
+      await user.save();
+    }
+
+    res.status(200).json(article);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
   }
-
-  if (article.userId.toString() !== req.user.id) {
-    return res.status(401).json({ message: "Not authorized" });
-  }
-
-  res.status(200).json(article);
 };
 
 

@@ -100,7 +100,7 @@ const User = require("../models/user");
 const { generateSummaryAndKeywords } = require("./aiService");
 const striptags = require("striptags");
 const { extractFullArticle } = require("./scraper");
-
+const bot = require("../telegram/bot");
 const normalizeUrl = require("../utils/normalizeUrl");
 
 const parser = new Parser();
@@ -172,7 +172,15 @@ const fetchAndStoreArticles = async () => {
 
           console.log("💾 Saved:", saved.title);
 
-         
+         const user = await User.findById(feed.userId); // Article ke owner (user) ko dhoondo
+  if (user && user.telegramConnected && user.telegramChatId) {
+    const message = `<b>🔔 New Article:</b> ${item.title}\n\n${summary}\n\n<a href="${link}">Read More</a>`;
+    
+    // bot.js se imported 'bot' instance ka use karein
+    bot.sendMessage(user.telegramChatId, message, { parse_mode: 'HTML' })
+       .then(() => console.log(`📢 Telegram alert sent to ${user.name}`))
+       .catch((err) => console.error("❌ Telegram Send Error:", err.message));
+  }
 
         } catch (err) {
           if (err.code === 11000) {
