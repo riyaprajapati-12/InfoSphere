@@ -106,100 +106,35 @@ const normalizeUrl = require("../utils/normalizeUrl");
 const parser = new Parser();
 const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
-const MAX_AI_CALLS = 20;
+
+
+// rssFetcher.js mein changes
+// ... (existing imports)
 
 const fetchAndStoreArticles = async () => {
-  console.log("🚀 Fetcher Started");
-
-  let aiCount = 0;
   const feeds = await Feed.find();
-
   for (const feed of feeds) {
-    try {
-      const feedData = await parser.parseURL(feed.feedUrl);
+    const feedData = await parser.parseURL(feed.feedUrl);
+    for (const item of feedData.items) {
+      const link = normalizeUrl(item.link);
+      const exists = await Article.findOne({ link });
+      if (exists) continue;
 
-      for (const item of feedData.items) {
-        const link = normalizeUrl(item.link);
+      const fullArticle = await extractFullArticle(link);
+      const rssText = striptags(item.content || "").trim();
+      const cleanContent = fullArticle || rssText;
 
-        // ✅ DUPLICATE CHECK (AI SE PEHLE)
-        const exists = await Article.findOne({ link });
-        if (exists) {
-          console.log("⏭️ Duplicate skipped:", item.title);
-          continue;
-        }
-
-        console.log("\n🆕 New Article:", item.title);
-
-        const fullArticle = await extractFullArticle(link);
-        const rssText = striptags(item.content || item.contentSnippet || "").trim();
-        const cleanContent =
-          fullArticle && fullArticle.length > rssText.length
-            ? fullArticle
-            : rssText;
-
-        let summary = "Summary not available.";
-        let keywords = [];
-
-        // 🤖 AI only if allowed
-        if (cleanContent.length > 800 && aiCount < MAX_AI_CALLS) {
-          console.log(`🤖 AI Processing... (${aiCount + 1}/${MAX_AI_CALLS})`);
-          const aiData = await generateSummaryAndKeywords(cleanContent);
-
-          if (aiData?.summary) {
-            summary = aiData.summary;
-            keywords = aiData.keywords || [];
-            aiCount++;
-            await sleep(4000); // Groq safety
-          } else {
-            summary = cleanContent.split(". ").slice(0, 3).join(". ") + ".";
-          }
-        } else {
-          summary = cleanContent.split(". ").slice(0, 3).join(". ") + ".";
-        }
-
-        // 💾 SAVE (race-condition safe)
-        try {
-          const saved = await Article.create({
-            feedId: feed._id,
-            userId: feed.userId,
-            title: item.title,
-            link,
-            content: cleanContent,
-            summary,
-            keywords,
-            publishedAt: new Date()
-          });
-
-          console.log("💾 Saved:", saved.title);
-
-         const user = await User.findById(feed.userId); // Article ke owner (user) ko dhoondo
-  if (user && user.telegramConnected && user.telegramChatId) {
-    const message = `<b>🔔 New Article:</b> ${item.title}\n\n${summary}\n\n<a href="${link}">Read More</a>`;
-    
-    // bot.js se imported 'bot' instance ka use karein
-    bot.sendMessage(user.telegramChatId, message, { parse_mode: 'HTML' })
-       .then(() => console.log(`📢 Telegram alert sent to ${user.name}`))
-       .catch((err) => console.error("❌ Telegram Send Error:", err.message));
-  }
-
-        } catch (err) {
-          if (err.code === 11000) {
-            console.log("⚠️ Duplicate blocked by Mongo unique index");
-          } else {
-            console.error("❌ Save failed:", err.message);
-          }
-        }
-      }
-
-      feed.lastFetched = new Date();
-      await feed.save();
-
-    } catch (err) {
-      console.error("❌ Feed error:", feed.feedUrl, err.message);
+      // 🛑 Yahan se AI call hata di gayi hai
+      await Article.create({
+        feedId: feed._id,
+        userId: feed.userId, // User A aur User B ka separate data
+        title: item.title,
+        link,
+        content: cleanContent,
+        summary: null, // Initial state empty rakhenge
+        publishedAt: new Date()
+      });
     }
   }
-
-  console.log("✅ Fetch cycle complete");
 };
-
 module.exports = { fetchAndStoreArticles };

@@ -1,33 +1,51 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api/axios";
-import { motion, useScroll, useSpring } from "framer-motion";
-import { FiArrowLeft, FiClock, FiShare2, FiZap, FiExternalLink, FiHash, FiLoader } from "react-icons/fi";
+import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
+import { FiArrowLeft, FiClock, FiShare2, FiZap, FiExternalLink, FiHash, FiLoader, FiCpu } from "react-icons/fi";
 
 export default function ArticleDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [summarizing, setSummarizing] = useState(false); // New state for AI trigger
 
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
 
   useEffect(() => {
-  const loadArticle = async () => {
+    const loadArticle = async () => {
+      try {
+        setLoading(true);
+        const res = await API.get(`/api/articles/${id}`);
+        setArticle(res.data);
+      } catch (err) {
+        console.error("Fetch failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) loadArticle();
+  }, [id]);
+
+  // 🔥 Manual Summary Logic
+  const handleGenerateSummary = async () => {
     try {
-      setLoading(true);
-      // Sirf ek call se Article fetch hoga aur Interest track ho jayega
-      const res = await API.get(`/api/articles/${id}`); 
-      setArticle(res.data);
+      setSummarizing(true);
+      const res = await API.post(`/api/articles/${id}/summarize`);
+      setArticle((prev) => ({
+        ...prev,
+        summary: res.data.summary,
+        keywords: res.data.keywords
+      }));
     } catch (err) {
-      console.error("Fetch failed:", err);
+      console.error("AI Summary Error:", err);
+      alert("AI engine is busy. Please try again later.");
     } finally {
-      setLoading(false);
+      setSummarizing(false);
     }
   };
-  if (id) loadArticle();
-}, [id]);
 
   if (loading) return (
     <div className="h-screen bg-[#0D1117] flex flex-col items-center justify-center gap-4">
@@ -41,8 +59,6 @@ export default function ArticleDetail() {
       <motion.div className="fixed top-0 left-0 right-0 h-1 bg-emerald-500 origin-left z-[60]" style={{ scaleX }} />
 
       <main className="max-w-4xl mx-auto px-6 pt-32 pb-20 relative z-10">
-        
-        {/* BACK BUTTON */}
         <button 
           onClick={() => navigate(-1)}
           className="group flex items-center gap-2 text-slate-500 hover:text-emerald-400 transition-colors mb-10 font-bold text-xs uppercase tracking-widest"
@@ -50,13 +66,11 @@ export default function ArticleDetail() {
           <FiArrowLeft /> Back to Neural Feed
         </button>
 
-        {/* HEADER */}
         <header className="mb-12">
           <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-tight text-white mb-6">
             {article?.title}
           </h1>
 
-          {/* ✨ KEYWORDS AS TAGS */}
           {article?.keywords && article.keywords.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-8">
               {article.keywords.map((tag, index) => (
@@ -73,22 +87,56 @@ export default function ArticleDetail() {
           )}
         </header>
 
-        {/* AI SUMMARY BOX */}
+        {/* AI SUMMARY BOX / GENERATE BUTTON */}
         <section className="relative group mb-16">
           <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-sky-500 rounded-[2.5rem] blur opacity-10 group-hover:opacity-25 transition duration-1000"></div>
           <div className="relative bg-[#161B22] border border-white/10 rounded-[2.5rem] p-8 md:p-12 shadow-2xl">
-            <div className="flex items-center gap-2 mb-6 text-emerald-400">
-              <FiZap className="fill-emerald-400" />
-              <span className="text-xs font-black uppercase tracking-[0.3em]">Neural Summary</span>
+            <div className="flex items-center justify-between mb-6">
+               <div className="flex items-center gap-2 text-emerald-400">
+                <FiZap className={summarizing ? "animate-pulse fill-emerald-400" : "fill-emerald-400"} />
+                <span className="text-xs font-black uppercase tracking-[0.3em]">Neural Summary</span>
+              </div>
+              
+              {/* ✨ Read More Link */}
+              <a href={article?.link} target="_blank" rel="noreferrer" className="text-slate-500 hover:text-white transition-colors">
+                <FiExternalLink size={18} />
+              </a>
             </div>
-            <p className="text-lg md:text-xl leading-relaxed text-slate-300 font-medium">
-              {article?.summary || "Summary is being processed by the AI engine..."}
-            </p>
+
+            <AnimatePresence mode="wait">
+              {article?.summary ? (
+                <motion.p 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-lg md:text-xl leading-relaxed text-slate-300 font-medium"
+                >
+                  {article.summary}
+                </motion.p>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex flex-col items-center py-4"
+                >
+                  <p className="text-slate-500 mb-6 text-center italic">No summary generated for this neural link yet.</p>
+                  <button
+                    onClick={handleGenerateSummary}
+                    disabled={summarizing}
+                    className="flex items-center gap-3 bg-emerald-500 hover:bg-emerald-400 text-black px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {summarizing ? (
+                      <><FiCpu className="animate-spin" /> Analyzing Content...</>
+                    ) : (
+                      <><FiZap /> Generate AI Summary</>
+                    )}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </section>
 
-        {/* ORIGINAL CONTENT */}
-        <div className="prose prose-invert max-w-none text-slate-400 leading-relaxed text-lg">
+        <div className="prose prose-invert max-w-none text-slate-400 leading-relaxed text-lg whitespace-pre-wrap">
           {article?.content}
         </div>
       </main>

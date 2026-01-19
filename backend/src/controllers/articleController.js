@@ -1,5 +1,6 @@
 const Article = require('../models/article');
-const User = require('../models/user')
+const User = require('../models/user');
+const { generateSummaryAndKeywords } = require('../services/aiService');
 const getArticles = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;
@@ -83,5 +84,29 @@ const getSingleArticle = async (req, res) => {
   }
 };
 
+const triggerManualSummary = async (req, res) => {
+  try {
+    const article = await Article.findById(req.params.id);
+    if (!article) return res.status(404).json({ message: "Article not found" });
 
-module.exports = { getArticles, markAsRead, getSingleArticle };
+    // Agar summary pehle se hai toh wahi bhej do
+    if (article.summary) return res.json({ summary: article.summary });
+
+    // 🤖 Generate AI Summary on demand
+    const aiData = await generateSummaryAndKeywords(article.content);
+    
+    if (aiData) {
+      article.summary = aiData.summary;
+      article.keywords = aiData.keywords;
+      await article.save();
+      return res.json(aiData);
+    }
+    
+    res.status(500).json({ message: "AI generation failed" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+module.exports = { getArticles, markAsRead, getSingleArticle,triggerManualSummary };
