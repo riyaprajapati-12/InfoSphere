@@ -6,6 +6,8 @@ const { OAuth2Client } = require('google-auth-library');
 const sendEmail = require('../utils/sendEmail'); // Assuming you have this utility
 const crypto = require('crypto');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const Feed = require('../models/feed');
+const Article = require('../models/article');
 
 // @desc    Register a new user
 // @route   POST /api/users/signup
@@ -320,7 +322,19 @@ const resendOtp = async (req, res) => {
 const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("name email");
-    res.json(user);
+    
+    // User ke specific counts nikaalein
+    const feedCount = await Feed.countDocuments({ userId: req.user.id });
+    const aiSummaryCount = await Article.countDocuments({ 
+      userId: req.user.id, 
+      summary: { $ne: null } // Sirf wo articles jinme summary exist karti hai
+    });
+
+    res.json({
+      ...user._doc,
+      feedCount,
+      aiSummaryCount
+    });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
