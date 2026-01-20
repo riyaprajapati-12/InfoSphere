@@ -8,6 +8,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "./context/AuthContext";
 import ArticleDetail from "./pages/ArticleDetail";
 import TelegramConnect from "./pages/TelegramConnect";
+import Settings from "./pages/Settings";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 function App() {
@@ -20,7 +21,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          
+          <Route path="/settings" element={<Settings/>}/>
           <Route path="/verify-otp/:email" element={<OtpVerificationWrapper />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/article/:id" element={<ArticleDetail />} />

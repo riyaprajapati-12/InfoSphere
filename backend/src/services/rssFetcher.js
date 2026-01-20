@@ -106,35 +106,98 @@ const normalizeUrl = require("../utils/normalizeUrl");
 const parser = new Parser();
 const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
-
-
-// rssFetcher.js mein changes
-// ... (existing imports)
+const MAX_AI_CALLS = 20;
 
 const fetchAndStoreArticles = async () => {
-  const feeds = await Feed.find();
+  console.log("🚀 Neural Fetcher Started");
+
+  let aiCount = 0;
+  const feeds = await Feed.find(); //
+
   for (const feed of feeds) {
-    const feedData = await parser.parseURL(feed.feedUrl);
-    for (const item of feedData.items) {
-      const link = normalizeUrl(item.link);
-      const exists = await Article.findOne({ link });
-      if (exists) continue;
+    try {
+      const feedData = await parser.parseURL(feed.feedUrl); //
 
-      const fullArticle = await extractFullArticle(link);
-      const rssText = striptags(item.content || "").trim();
-      const cleanContent = fullArticle || rssText;
+      for (const item of feedData.items) {
+        const link = normalizeUrl(item.link); //
 
-      // 🛑 Yahan se AI call hata di gayi hai
-      await Article.create({
-        feedId: feed._id,
-        userId: feed.userId, // User A aur User B ka separate data
-        title: item.title,
-        link,
-        content: cleanContent,
-        summary: null, // Initial state empty rakhenge
-        publishedAt: new Date()
-      });
+        // ✅ DUPLICATE CHECK
+        const exists = await Article.findOne({ link }); //
+        if (exists) continue;
+
+        console.log("\n🆕 Indexing New Intel:", item.title);
+
+        // ✅ SCRAPE FULL CONTENT
+        const fullArticle = await extractFullArticle(link); //
+        const rssText = striptags(item.content || item.contentSnippet || "").trim();
+        const cleanContent = fullArticle && fullArticle.length > rssText.length ? fullArticle : rssText; //
+
+        // ✅ AI SUMMARY (Sirf agar cleanContent 800 chars se bada ho)
+        let summary = null; // Default null rakhenge manually trigger karne ke liye
+        let keywords = [];
+
+        // Note: Aapne kaha tha ki website par button se summary ho, 
+        // isliye fetcher mein hum sirf data store kar rahe hain. 
+        // Agar aap auto-summarize chahti hain toh niche ka logic enable karein:
+        /*
+        if (cleanContent.length > 800 && aiCount < MAX_AI_CALLS) {
+          const aiData = await generateSummaryAndKeywords(cleanContent);
+          if (aiData?.summary) {
+            summary = aiData.summary;
+            keywords = aiData.keywords || [];
+            aiCount++;
+            await sleep(4000); 
+          }
+        }
+        */
+
+        // ✅ SAVE TO DATABASE
+        try {
+          const savedArticle = await Article.create({
+            feedId: feed._id,
+            userId: feed.userId,
+            title: item.title,
+            link,
+            content: cleanContent,
+            summary, 
+            keywords,
+            publishedAt: new Date()
+          });
+
+          // ✅ TELEGRAM NOTIFICATION LOGIC
+          const user = await User.findById(feed.userId);
+          
+          if (
+            user && 
+            user.telegramConnected && 
+            user.telegramChatId && 
+            user.notificationPreference === 'instant' // Sirf instant par hi bhejein
+          ) {
+            const message = `<b>🔔 New Article:</b> ${item.title}\n\n<i>Source: ${feed.title}</i>\n\n<a href="${link}">Read Full Article</a>`;
+            
+            bot.sendMessage(user.telegramChatId, message, { parse_mode: 'HTML' })
+               .then(() => console.log(`📢 Instant alert sent to ${user.name}`))
+               .catch((err) => console.error("❌ Telegram Send Error:", err.message));
+          }
+
+        } catch (err) {
+          if (err.code === 11000) {
+            console.log("⚠️ Duplicate blocked by Mongo unique index");
+          } else {
+            console.error("❌ Save failed:", err.message);
+          }
+        }
+      }
+
+      feed.lastFetched = new Date();
+      await feed.save();
+
+    } catch (err) {
+      console.error("❌ Feed error:", feed.feedUrl, err.message);
     }
   }
+
+  console.log("✅ Fetch cycle complete");
 };
+
 module.exports = { fetchAndStoreArticles };

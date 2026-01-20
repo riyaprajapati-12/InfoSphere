@@ -89,13 +89,15 @@ const Sidebar = () => {
 
           {/* ─── BOTTOM SETTINGS ─── */}
           <div className="p-6 bg-black/20 border-t border-white/5">
-            <motion.button
-              whileHover={{ x: 5 }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-400 hover:text-white transition-all font-bold text-sm"
-            >
-              <FiSettings className="text-lg" />
-              Settings
-            </motion.button>
+            // Sidebar.jsx mein line 85 ke aas-paas
+<motion.button
+  whileHover={{ x: 5 }}
+  onClick={() => navigate("/settings")} // Navigate to the new settings page
+  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-400 hover:text-white transition-all font-bold text-sm"
+>
+  <FiSettings className="text-lg" />
+  Settings
+</motion.button>
             
             <div className="mt-4 px-4 py-3 rounded-2xl bg-gradient-to-br from-[#4F6F64]/20 to-transparent border border-emerald-500/10">
               <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest mb-1">Storage</p>

@@ -57,6 +57,11 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  notificationPreference: {
+  type: String,
+  enum: ['instant', 'daily', 'none'],
+  default: 'instant'
+},
 
   // 🔹 Auth helpers
   otp: {

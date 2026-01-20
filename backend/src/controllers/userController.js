@@ -407,6 +407,28 @@ const connectTelegram = async (req, res) => {
   res.json({ message: "Telegram connected successfully" });
 };
 
+// userController.js mein add karein
+const updateSettings = async (req, res) => {
+  try {
+    const { notificationPreference, telegramConnected } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (notificationPreference) user.notificationPreference = notificationPreference;
+    
+    // Disconnect Telegram logic
+    if (telegramConnected === false) {
+      user.telegramConnected = false;
+      user.telegramId = null;
+      user.telegramChatId = null;
+    }
+
+    await user.save();
+    res.json({ message: "Settings updated successfully", user });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
     signup,
     login,
@@ -415,5 +437,6 @@ module.exports = {
    resendOtp,
    getMe,
    generateTelegramToken,
-   connectTelegram
+   connectTelegram,
+   updateSettings
 };

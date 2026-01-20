@@ -8,7 +8,8 @@ const {
     resendOtp,
    getMe,
    generateTelegramToken,
-   connectTelegram
+   connectTelegram,
+   updateSettings
 
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
@@ -20,5 +21,5 @@ router.post("/resend-otp", resendOtp);
 router.get("/me", protect, getMe);
 router.post('/telegram/token', protect, generateTelegramToken);
 router.post('/telegram/connect', connectTelegram);
-
+router.post('/settings', protect, updateSettings);
 module.exports = router;
