@@ -89,7 +89,7 @@ const Sidebar = () => {
 
           {/* ─── BOTTOM SETTINGS ─── */}
           <div className="p-6 bg-black/20 border-t border-white/5">
-            // Sidebar.jsx mein line 85 ke aas-paas
+            
 <motion.button
   whileHover={{ x: 5 }}
   onClick={() => navigate("/settings")} // Navigate to the new settings page
