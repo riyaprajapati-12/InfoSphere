@@ -38,26 +38,58 @@ bot.onText(/\/connect (.+)/, async (msg, match) => {
   }
 });
 
-bot.onText(/\/summary (.+)/, async (msg, match) => {
+bot.onText(/\/summary\s*(.*)/, async (msg, match) => {
   const chatId = msg.chat.id;
-  const articleUrl = match[1]; // User link provide karega
+  const articleUrl = match[1]?.trim(); // User jo link bhejega
 
   try {
-    const article = await Article.findOne({ link: articleUrl });
+    // 1. Check karein ki link provide kiya hai ya nahi
+    if (!articleUrl) {
+      return bot.sendMessage(chatId, "⚠️ <b>Usage:</b> <code>/summary [article_link]</code>\n\nExample:\n<code>/summary https://example.com/news</code>", { parse_mode: "HTML" });
+    }
+
+    // 2. User ko dhoondho aur security check
+    const user = await User.findOne({ telegramChatId: chatId.toString() });
+    if (!user) {
+      return bot.sendMessage(chatId, "❌ Account not linked. Connect via Dashboard first.");
+    }
+
+    bot.sendMessage(chatId, "🤖 <b>Processing Intelligence...</b>\nFetching content and generating neural summary.", { parse_mode: "HTML" });
+
+    // 3. Database mein article dhoondho
+    // Hum normalizeUrl use karenge taaki link match ho jaye
+    const normalized = articleUrl.toLowerCase().split('?')[0]; 
+    const article = await Article.findOne({ 
+      userId: user._id, 
+      link: { $regex: normalized, $options: 'i' } 
+    });
+
     if (!article) {
-      return bot.sendMessage(chatId, "❌ Article not found in your feed.");
+      return bot.sendMessage(chatId, "❌ <b>Article Not Found.</b>\nMake sure the article exists in your feed.", { parse_mode: "HTML" });
     }
 
-    bot.sendMessage(chatId, "🤖 Generating summary, please wait...");
+    // 4. Summary check karein (agar pehle se ho toh wahi bhej do)
+    if (article.summary) {
+      return bot.sendMessage(chatId, `✨ <b>Neural Summary:</b>\n\n${article.summary}`, { parse_mode: "HTML" });
+    }
 
+    // 5. AI call karein agar summary nahi hai
     const aiData = await generateSummaryAndKeywords(article.content);
-    if (aiData) {
-      bot.sendMessage(chatId, `📝 *Summary:* \n\n${aiData.summary}`, { parse_mode: "Markdown" });
+
+    if (aiData?.summary) {
+      // Database update karein taaki website par bhi dikhe
+      article.summary = aiData.summary;
+      article.keywords = aiData.keywords || [];
+      await article.save();
+
+      bot.sendMessage(chatId, `✨ <b>Neural Summary:</b>\n\n${aiData.summary}`, { parse_mode: "HTML" });
     } else {
-      bot.sendMessage(chatId, "⚠️ Could not generate summary at this moment.");
+      bot.sendMessage(chatId, "⚠️ AI engine is busy. Could not generate summary at this moment.");
     }
+
   } catch (err) {
-    bot.sendMessage(chatId, "❌ An error occurred.");
+    console.error("Telegram /summary error:", err.message);
+    bot.sendMessage(chatId, "❌ <b>Error:</b> Failed to process summary request.");
   }
 });
 
