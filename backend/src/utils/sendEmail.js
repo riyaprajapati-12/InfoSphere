@@ -4,23 +4,24 @@ const nodemailer = require("nodemailer");
 const sendEmail = async (options) => {
   try {
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.elasticemail.com",
+      port: 2525, // Ya 587
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.ELASTIC_USER,
+        pass: process.env.ELASTIC_API_KEY,
       },
     });
 
     await transporter.sendMail({
-      from: `"InfoSphere" <${process.env.GMAIL_USER}>`,
+      from: `"InfoSphere" <${process.env.ELASTIC_USER}>`,
       to: options.email,
       subject: options.subject,
       text: options.message,
     });
 
-    console.log("Email sent successfully via Gmail");
+    console.log("Email sent successfully via Elastic Email");
   } catch (error) {
-    console.error("Gmail Error:", error);
+    console.error("Email Error:", error);
     throw new Error(`Email Service Error: ${error.message}`); 
   }
 };
