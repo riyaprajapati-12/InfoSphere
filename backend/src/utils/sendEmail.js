@@ -4,14 +4,16 @@ const nodemailer = require("nodemailer");
 const sendEmail = async (options) => {
   try {
     const transporter = nodemailer.createTransport({
-      service: "gmail",
       host: "smtp.gmail.com",
-      port: 465, 
-      secure: true, // Render ke liye ye mandatory hai
+      port: 465,
+      secure: true, 
       auth: {
         user: process.env.EMAIL_USER, 
-        pass: process.env.EMAIL_PASS, // 16-digit App Password
+        pass: process.env.EMAIL_PASS, // 16-digit (no spaces)
       },
+      connectionTimeout: 10000, // 10 seconds wait
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
     });
 
     await transporter.sendMail({
@@ -20,7 +22,6 @@ const sendEmail = async (options) => {
       subject: options.subject,
       text: options.message,
     });
-    console.log("Mail sent successfully to any domain!");
   } catch (error) {
     console.error("Gmail Error:", error);
     throw new Error(`Email Service Error: ${error.message}`); 
