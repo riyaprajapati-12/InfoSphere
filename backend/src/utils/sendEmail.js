@@ -15,7 +15,7 @@ const sendEmail = async (options) => {
     });
 
     await transporter.sendMail({
-      from: `"InfoSphere" <${process.env.GMAIL_USER}>`,
+      from: `"InfoSphere" <${process.env.EMAIL_USER}>`,
       to: options.email,
       subject: options.subject,
       text: options.message,
