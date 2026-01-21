@@ -4,26 +4,23 @@ const nodemailer = require("nodemailer");
 const sendEmail = async (options) => {
   try {
     const transporter = nodemailer.createTransport({
-      host: "smtp-relay.brevo.com",
-      port: 587,
-      secure: false, 
+      service: "gmail",
       auth: {
-        user: process.env.BREVO_USER,      
-        pass: process.env.BREVO_SMTP_KEY,  
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
     await transporter.sendMail({
-      from: `"InfoSphere" <${process.env.BREVO_USER}>`,
+      from: `"InfoSphere" <${process.env.GMAIL_USER}>`,
       to: options.email,
       subject: options.subject,
       text: options.message,
     });
 
-    console.log("Email sent successfully via Brevo");
+    console.log("Email sent successfully via Gmail");
   } catch (error) {
-    console.error("Brevo Email Error details:", error);
-    // 🔥 Yahan error throw karein taaki controller ise pakad sake
+    console.error("Gmail Error:", error);
     throw new Error(`Email Service Error: ${error.message}`); 
   }
 };
