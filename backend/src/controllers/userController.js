@@ -12,57 +12,22 @@ const Article = require('../models/article');
 // @desc    Register a new user
 // @route   POST /api/users/signup
 // @access  Public
+// userController.js mein signup function ka updated part
 const signup = async (req, res) => {
   const { email, password, name } = req.body;
 
   try {
     let user = await User.findOne({ email });
 
-    // 🟡 CASE 1: User already exists
-    if (user) {
-      if (user.isVerified) {
-        return res.status(400).json({
-          message: "User already exists and is verified",
-        });
-      }
-
-      // 🔁 Unverified user → resend OTP
-      const otp = otpGenerator.generate(6, {
-        digits: true,
-        upperCaseAlphabets: false,
-        lowerCaseAlphabets: false,
-        specialChars: false,
-      });
-
-      user.otp = otp;
-      user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
-      await user.save();
-
-      // 🔥 NON-BLOCKING EMAIL
-      sendEmail({
-        email: user.email,
-        subject: "OTP Verification",
-        message: `Your OTP for registration is ${otp}`,
-      }).catch(err =>
-        console.error("OTP resend email failed:", err.message)
-      );
-
-      return res.status(200).json({
-        message: "OTP resent successfully. Please check your email.",
-      });
+    if (user && user.isVerified) {
+      return res.status(400).json({ message: "User already exists" });
     }
 
-    // 🟢 CASE 2: New user signup
     const hashedPassword = await bcrypt.hash(password, 10);
+    const otp = otpGenerator.generate(6, { digits: true, upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
 
-    const otp = otpGenerator.generate(6, {
-      digits: true,
-      upperCaseAlphabets: false,
-      lowerCaseAlphabets: false,
-      specialChars: false,
-    });
-
-    user = new User({
+    // Temporary User object (save abhi nahi karenge)
+    const newUser = new User({
       name,
       email,
       password: hashedPassword,
@@ -70,26 +35,26 @@ const signup = async (req, res) => {
       otpExpires: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-    await user.save();
-
-    // 🔥 NON-BLOCKING EMAIL (IMPORTANT FIX)
-    sendEmail({
-      email: user.email,
+    // 🔥 AWAIT EMAIL SENDING (Blocking)
+    // Agar ye fail hua toh seedhe niche wale catch block mein jayega
+    await sendEmail({
+      email: newUser.email,
       subject: "OTP Verification",
       message: `Your OTP for registration is ${otp}`,
-    }).catch(err =>
-      console.error("Signup email failed:", err.message)
-    );
+    });
 
-    // ✅ RESPONSE IMMEDIATELY
+    // Email success hone par hi user save hoga
+    await newUser.save();
+
     return res.status(201).json({
       message: "Signup successful. Please verify OTP sent to your email.",
     });
 
   } catch (error) {
-    console.error("Signup error:", error);
+    console.error("SIGNUP DEBUG ERROR:", error.message);
+    // Frontend ko ab real error dikhega
     return res.status(500).json({
-      message: "Server error during signup",
+      message: error.message || "Server error during signup",
     });
   }
 };
