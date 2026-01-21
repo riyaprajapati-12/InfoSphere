@@ -1,30 +1,24 @@
 // src/utils/sendEmail.js
-const nodemailer = require("nodemailer");
+const sgMail = require('@sendgrid/mail');
 
 const sendEmail = async (options) => {
-  try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true, 
-      auth: {
-        user: process.env.EMAIL_USER, 
-        pass: process.env.EMAIL_PASS, // 16-digit (no spaces)
-      },
-      connectionTimeout: 10000, // 10 seconds wait
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-    });
+  // Render environment se API Key uthayenge
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-    await transporter.sendMail({
-      from: `"InfoSphere" <${process.env.EMAIL_USER}>`,
-      to: options.email,
-      subject: options.subject,
-      text: options.message,
-    });
+  const msg = {
+    to: options.email, // Kisi bhi domain par bhej sakte hain
+    from: process.env.SENDER_EMAIL, // Wahi email jo SendGrid par verify kiya hai
+    subject: options.subject,
+    text: options.message,
+    html: `<strong>${options.message}</strong>`,
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log("Email sent successfully via SendGrid API");
   } catch (error) {
-    console.error("Gmail Error:", error);
-    throw new Error(`Email Service Error: ${error.message}`); 
+    console.error("SendGrid API Error:", error.response ? error.response.body : error);
+    throw new Error(`Email Service Error: ${error.message}`);
   }
 };
 
