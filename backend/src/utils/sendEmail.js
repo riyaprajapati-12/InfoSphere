@@ -4,25 +4,25 @@ const nodemailer = require("nodemailer");
 const sendEmail = async (options) => {
   try {
     const transporter = nodemailer.createTransport({
-      host: "smtp.sendgrid.net",
-      port: 465, // Render par 465 (SSL) zyada stable hai 587 se
-      secure: true, 
+      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465, 
+      secure: true, // Render ke liye ye mandatory hai
       auth: {
-        user: "apikey", // Yeh fix rahega, "apikey" hi likhna hai
-        pass: process.env.SENDGRID_API_KEY, // Aapki lambi API Key
+        user: process.env.EMAIL_USER, 
+        pass: process.env.EMAIL_PASS, // 16-digit App Password
       },
     });
 
     await transporter.sendMail({
-      from: `"InfoSphere" <${process.env.SENDER_EMAIL}>`, // SendGrid par verified email
+      from: `"InfoSphere" <${process.env.GMAIL_USER}>`,
       to: options.email,
       subject: options.subject,
       text: options.message,
     });
-
-    console.log("Email sent successfully via SendGrid");
+    console.log("Mail sent successfully to any domain!");
   } catch (error) {
-    console.error("SendGrid Error:", error);
+    console.error("Gmail Error:", error);
     throw new Error(`Email Service Error: ${error.message}`); 
   }
 };
