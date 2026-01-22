@@ -52,25 +52,25 @@ const markAsRead = async (req, res) => {
 };
 
 // ✅ Secure Manual Summary
-const triggerManualSummary = async (req, res) => {
-  try {
-    const article = await Article.findOne({ _id: req.params.id, userId: req.user.id });
-    if (!article) return res.status(404).json({ message: "Article not found" });
+// const triggerManualSummary = async (req, res) => {
+//   try {
+//     const article = await Article.findOne({ _id: req.params.id, userId: req.user.id });
+//     if (!article) return res.status(404).json({ message: "Article not found" });
 
-    if (article.summary) return res.json({ summary: article.summary });
+//     if (article.summary) return res.json({ summary: article.summary });
 
-    const aiData = await generateSummaryAndKeywords(article.content);
-    if (aiData) {
-      article.summary = aiData.summary;
-      article.keywords = aiData.keywords;
-      await article.save();
-      return res.json(aiData);
-    }
-    res.status(500).json({ message: "AI generation failed" });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
+//     const aiData = await generateSummaryAndKeywords(article.content);
+//     if (aiData) {
+//       article.summary = aiData.summary;
+//       article.keywords = aiData.keywords;
+//       await article.save();
+//       return res.json(aiData);
+//     }
+//     res.status(500).json({ message: "AI generation failed" });
+//   } catch (err) {
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
 const getSingleArticle = async (req, res) => {
   try {
@@ -96,7 +96,28 @@ const getSingleArticle = async (req, res) => {
   }
 };
 
+const triggerManualSummary = async (req, res) => {
+  try {
+    const { language } = req.body; // Frontend se language preference (Hindi/English)
+    const article = await Article.findOne({ _id: req.params.id, userId: req.user.id });
 
+    if (!article) return res.status(404).json({ message: "Article not found" });
+
+    // AI generate logic with language support
+    const aiData = await generateSummaryAndKeywords(article.content, language || "English");
+    
+    if (aiData) {
+      article.summary = aiData.summary;
+      article.keywords = aiData.keywords;
+      await article.save();
+      return res.json(aiData);
+    }
+    
+    res.status(500).json({ message: "AI generation failed" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 
 module.exports = { getArticles, markAsRead, getSingleArticle,triggerManualSummary };

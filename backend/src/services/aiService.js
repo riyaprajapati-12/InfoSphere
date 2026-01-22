@@ -62,40 +62,82 @@
 
 // module.exports = { generateSummaryAndKeywords };
 
+// const Groq = require("groq-sdk");
+// require("dotenv").config();
+
+// const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+// let groqLocked = false;
+// let lastCallTime = 0;
+// const COOLDOWN = 2000; // Sirf 2 seconds ka protection
+
+// async function generateSummaryAndKeywords(content) {
+//   if (!content || content.length < 400) return null;
+
+//   if (groqLocked) {
+//     console.warn("🚫 Groq locked due to Rate Limit");
+//     return null;
+//   }
+
+//   // Double-check cooldown
+//   if (Date.now() - lastCallTime < COOLDOWN) {
+//     return null; 
+//   }
+
+//   lastCallTime = Date.now();
+
+//   try {
+//     const completion = await groq.chat.completions.create({
+//       messages: [
+//         { role: "system", content: "You are a news summarizer. Return ONLY valid JSON." },
+//         { 
+//           role: "user", 
+//           content: `Return ONLY valid JSON: {"summary":"one paragraph","keywords":["key1","key2"]}\n\nContent: ${content.substring(0, 4000)}` 
+//         }
+//       ],
+//       model: "llama-3.3-70b-versatile", // Ya "llama-3.1-8b-instant" for faster/cheaper calls
+//       response_format: { type: "json_object" }
+//     });
+
+//     const text = completion.choices[0]?.message?.content;
+//     return JSON.parse(text);
+
+//   } catch (err) {
+//     if (err.status === 429) {
+//       groqLocked = true;
+//       console.error("🚫 Groq RATE LIMIT hit");
+//     } else {
+//       console.error("Groq error:", err.message);
+//     }
+//     return null;
+//   }
+// }
+
+// module.exports = { generateSummaryAndKeywords };
+
 const Groq = require("groq-sdk");
 require("dotenv").config();
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-let groqLocked = false;
-let lastCallTime = 0;
-const COOLDOWN = 2000; // Sirf 2 seconds ka protection
-
-async function generateSummaryAndKeywords(content) {
+async function generateSummaryAndKeywords(content, language = "English") {
   if (!content || content.length < 400) return null;
-
-  if (groqLocked) {
-    console.warn("🚫 Groq locked due to Rate Limit");
-    return null;
-  }
-
-  // Double-check cooldown
-  if (Date.now() - lastCallTime < COOLDOWN) {
-    return null; 
-  }
-
-  lastCallTime = Date.now();
 
   try {
     const completion = await groq.chat.completions.create({
       messages: [
-        { role: "system", content: "You are a news summarizer. Return ONLY valid JSON." },
+        { 
+          role: "system", 
+          content: `You are a professional news summarizer. You must return ONLY valid JSON. The 'summary' text must be written in ${language}.` 
+        },
         { 
           role: "user", 
-          content: `Return ONLY valid JSON: {"summary":"one paragraph","keywords":["key1","key2"]}\n\nContent: ${content.substring(0, 4000)}` 
+          content: `Return ONLY valid JSON: {"summary":"a concise one paragraph summary in ${language}","keywords":["key1","key2"]}
+          
+          Content to summarize: ${content.substring(0, 4000)}` 
         }
       ],
-      model: "llama-3.3-70b-versatile", // Ya "llama-3.1-8b-instant" for faster/cheaper calls
+      model: "llama-3.3-70b-versatile",
       response_format: { type: "json_object" }
     });
 
@@ -103,12 +145,7 @@ async function generateSummaryAndKeywords(content) {
     return JSON.parse(text);
 
   } catch (err) {
-    if (err.status === 429) {
-      groqLocked = true;
-      console.error("🚫 Groq RATE LIMIT hit");
-    } else {
-      console.error("Groq error:", err.message);
-    }
+    console.error("Groq error:", err.message);
     return null;
   }
 }
