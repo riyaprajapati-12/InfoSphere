@@ -1,17 +1,16 @@
 const Article = require('../models/article');
 const User = require('../models/user');
 const { generateSummaryAndKeywords } = require('../services/aiService');
+
+// ✅ Secure fetching of articles
 const getArticles = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-    const isRead = req.query.isRead; // true / false / undefined
-
+    const isRead = req.query.isRead;
     const query = { userId: req.user.id };
 
-    if (isRead !== undefined) {
-      query.isRead = isRead === 'true';
-    }
+    if (isRead !== undefined) query.isRead = isRead === 'true';
 
     const articles = await Article.find(query)
       .sort({ publishedAt: -1 })
@@ -19,47 +18,60 @@ const getArticles = async (req, res) => {
       .limit(limit);
 
     const total = await Article.countDocuments(query);
-
-    res.status(200).json({
-      articles,
-      page,
-      totalPages: Math.ceil(total / limit),
-    });
-
+    res.status(200).json({ articles, page, totalPages: Math.ceil(total / limit) });
   } catch (error) {
-    console.error('Error fetching articles:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-
-
-// controllers/articleController.js
-
+// ✅ Improved Interest Tracking Logic
 const markAsRead = async (req, res) => {
     try {
-        const article = await Article.findById(req.params.id);
+        // Security Check: Ensure article belongs to user
+        const article = await Article.findOne({ _id: req.params.id, userId: req.user.id });
         if (!article) return res.status(404).json({ message: 'Article not found' });
 
-        article.isRead = true;
-        await article.save();
+        // Only track interest if not already read
+        if (!article.isRead) {
+            article.isRead = true;
+            await article.save();
 
-        // 🔥 Interest Tracking Logic
-        const user = await User.findById(req.user.id);
-        if (article.keywords && article.keywords.length > 0) {
-            article.keywords.forEach(keyword => {
-                const currentScore = user.keywordProfile.get(keyword) || 0;
-                user.keywordProfile.set(keyword, currentScore + 1);
-            });
-            await user.save();
+            const user = await User.findById(req.user.id);
+            if (article.keywords && article.keywords.length > 0) {
+                article.keywords.forEach(keyword => {
+                    const currentScore = user.keywordProfile.get(keyword) || 0;
+                    user.keywordProfile.set(keyword, currentScore + 1);
+                });
+                await user.save();
+            }
         }
-
         res.status(200).json({ message: "Article read and interest tracked" });
     } catch (error) {
         res.status(500).json({ message: 'Tracking failed' });
     }
 };
-// Is logic ko articleController.js mein daalein
+
+// ✅ Secure Manual Summary
+const triggerManualSummary = async (req, res) => {
+  try {
+    const article = await Article.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!article) return res.status(404).json({ message: "Article not found" });
+
+    if (article.summary) return res.json({ summary: article.summary });
+
+    const aiData = await generateSummaryAndKeywords(article.content);
+    if (aiData) {
+      article.summary = aiData.summary;
+      article.keywords = aiData.keywords;
+      await article.save();
+      return res.json(aiData);
+    }
+    res.status(500).json({ message: "AI generation failed" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 const getSingleArticle = async (req, res) => {
   try {
     const article = await Article.findById(req.params.id);
@@ -84,29 +96,7 @@ const getSingleArticle = async (req, res) => {
   }
 };
 
-const triggerManualSummary = async (req, res) => {
-  try {
-    const article = await Article.findById(req.params.id);
-    if (!article) return res.status(404).json({ message: "Article not found" });
 
-    // Agar summary pehle se hai toh wahi bhej do
-    if (article.summary) return res.json({ summary: article.summary });
-
-    // 🤖 Generate AI Summary on demand
-    const aiData = await generateSummaryAndKeywords(article.content);
-    
-    if (aiData) {
-      article.summary = aiData.summary;
-      article.keywords = aiData.keywords;
-      await article.save();
-      return res.json(aiData);
-    }
-    
-    res.status(500).json({ message: "AI generation failed" });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
 
 
 module.exports = { getArticles, markAsRead, getSingleArticle,triggerManualSummary };

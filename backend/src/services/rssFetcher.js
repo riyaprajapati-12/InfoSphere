@@ -97,106 +97,55 @@ const Parser = require("rss-parser");
 const Feed = require("../models/feed");
 const Article = require("../models/article");
 const User = require("../models/user");
-const { generateSummaryAndKeywords } = require("./aiService");
-const striptags = require("striptags");
+const normalizeUrl = require("../utils/normalizeUrl");
 const { extractFullArticle } = require("./scraper");
 const bot = require("../telegram/bot");
-const normalizeUrl = require("../utils/normalizeUrl");
 
 const parser = new Parser();
-const sleep = (ms) => new Promise(res => setTimeout(res, ms));
-
-const MAX_AI_CALLS = 20;
 
 const fetchAndStoreArticles = async () => {
   console.log("🚀 Neural Fetcher Started");
-
-  let aiCount = 0;
-  const feeds = await Feed.find(); //
+  const feeds = await Feed.find();
 
   for (const feed of feeds) {
     try {
-      const feedData = await parser.parseURL(feed.feedUrl); //
+      const feedData = await parser.parseURL(feed.feedUrl);
+      const user = await User.findById(feed.userId);
 
       for (const item of feedData.items) {
-        const link = normalizeUrl(item.link); //
+        const link = normalizeUrl(item.link);
 
-        // ✅ DUPLICATE CHECK
-        const exists = await Article.findOne({ link }); //
+        // ✅ Per-user Duplicate Check
+        const exists = await Article.findOne({ userId: feed.userId, link });
         if (exists) continue;
 
-        console.log("\n🆕 Indexing New Intel:", item.title);
-
-        // ✅ SCRAPE FULL CONTENT
-        const fullArticle = await extractFullArticle(link); //
-        const rssText = striptags(item.content || item.contentSnippet || "").trim();
-        const cleanContent = fullArticle && fullArticle.length > rssText.length ? fullArticle : rssText; //
-
-        // ✅ AI SUMMARY (Sirf agar cleanContent 800 chars se bada ho)
-        let summary = null; // Default null rakhenge manually trigger karne ke liye
-        let keywords = [];
-
-        // Note: Aapne kaha tha ki website par button se summary ho, 
-        // isliye fetcher mein hum sirf data store kar rahe hain. 
-        // Agar aap auto-summarize chahti hain toh niche ka logic enable karein:
-        /*
-        if (cleanContent.length > 800 && aiCount < MAX_AI_CALLS) {
-          const aiData = await generateSummaryAndKeywords(cleanContent);
-          if (aiData?.summary) {
-            summary = aiData.summary;
-            keywords = aiData.keywords || [];
-            aiCount++;
-            await sleep(4000); 
-          }
-        }
-        */
-
-        // ✅ SAVE TO DATABASE
-        try {
-          const savedArticle = await Article.create({
+        console.log("🆕 Indexing:", item.title);
+        const fullContent = await extractFullArticle(link);
+        
+        // Save without mandatory AI summary (user can trigger later)
+        const savedArticle = await Article.create({
             feedId: feed._id,
             userId: feed.userId,
             title: item.title,
             link,
-            content: cleanContent,
-            summary, 
-            keywords,
-            publishedAt: new Date()
-          });
+            content: fullContent || item.contentSnippet || item.content || "",
+            publishedAt: new Date(),
+            isRead: false
+        });
 
-          // ✅ TELEGRAM NOTIFICATION LOGIC
-          const user = await User.findById(feed.userId);
-          
-          if (
-            user && 
-            user.telegramConnected && 
-            user.telegramChatId && 
-            user.notificationPreference === 'instant' // Sirf instant par hi bhejein
-          ) {
-            const message = `<b>🔔 New Article:</b> ${item.title}\n\n<i>Source: ${feed.title}</i>\n\n<a href="${link}">Read Full Article</a>`;
-            
+        // ✅ Instant Telegram Notification
+        if (user && user.telegramConnected && user.notificationPreference === 'instant') {
+            const message = `<b>🔔 New:</b> ${item.title}\n\n<a href="${link}">Read More</a>`;
             bot.sendMessage(user.telegramChatId, message, { parse_mode: 'HTML' })
-               .then(() => console.log(`📢 Instant alert sent to ${user.name}`))
-               .catch((err) => console.error("❌ Telegram Send Error:", err.message));
-          }
-
-        } catch (err) {
-          if (err.code === 11000) {
-            console.log("⚠️ Duplicate blocked by Mongo unique index");
-          } else {
-            console.error("❌ Save failed:", err.message);
-          }
+               .catch(err => console.error("Telegram Error:", err.message));
         }
       }
-
       feed.lastFetched = new Date();
       await feed.save();
-
     } catch (err) {
-      console.error("❌ Feed error:", feed.feedUrl, err.message);
+      console.error("❌ Feed error:", feed.feedUrl);
     }
   }
-
   console.log("✅ Fetch cycle complete");
 };
 
