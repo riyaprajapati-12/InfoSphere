@@ -3,12 +3,13 @@ import API from "../api/axios";
 import { motion } from "framer-motion";
 import { FiBell, FiInfo, FiTrash2, FiShield, FiArrowLeft, FiZap, FiActivity, FiGlobe } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-
+import { AuthContext } from "../context/AuthContext";
 const Settings = () => {
   const [pref, setPref] = useState("instant");
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(false);
   const [language, setLanguage] = useState("English");
+  const { user, fetchUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,7 +46,8 @@ const Settings = () => {
   const handleLanguageChange = async (newLang) => {
   setLanguage(newLang);
   try {
-    await API.post("/api/users/settings", { preferredLanguage: newLang }); // Backend update
+    await API.post("/api/users/settings", { preferredLanguage: newLang });
+    if (fetchUser) await fetchUser(); // Backend update
   } catch (err) {
     console.error("Language update failed");
   }

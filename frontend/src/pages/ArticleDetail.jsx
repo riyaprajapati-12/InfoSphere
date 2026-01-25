@@ -3,9 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
 import { FiArrowLeft, FiClock, FiShare2, FiZap, FiExternalLink, FiHash, FiLoader, FiCpu } from "react-icons/fi";
-import AuthContext from "../context/AuthContext"
+import {AuthContext} from "../context/AuthContext"
 export default function ArticleDetail() {
- const { user } = useContext(AuthContext); 
+const { user } = useContext(AuthContext); 
 const { id } = useParams();
 const navigate = useNavigate();
   const [article, setArticle] = useState(null);
