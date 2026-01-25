@@ -71,7 +71,7 @@ let groqLocked = false;
 let lastCallTime = 0;
 const COOLDOWN = 2000; // Sirf 2 seconds ka protection
 
-async function generateSummaryAndKeywords(content) {
+async function generateSummaryAndKeywords(content, targetLanguage = 'English') {
   if (!content || content.length < 400) return null;
 
   if (groqLocked) {
@@ -88,13 +88,13 @@ async function generateSummaryAndKeywords(content) {
 
   try {
     const completion = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: "You are a news summarizer. Return ONLY valid JSON." },
-        { 
-          role: "user", 
-          content: `Return ONLY valid JSON: {"summary":"one paragraph","keywords":["key1","key2"]}\n\nContent: ${content.substring(0, 4000)}` 
-        }
-      ],
+    messages: [
+      { role: "system", content: `You are a news summarizer. Return ONLY valid JSON in ${targetLanguage}.` },
+      { 
+        role: "user", 
+        content: `Return ONLY valid JSON: {"summary":"one paragraph in ${targetLanguage}","keywords":["key1","key2"]}\n\nContent: ${content.substring(0, 4000)}` 
+      }
+    ],
       model: "llama-3.3-70b-versatile", // Ya "llama-3.1-8b-instant" for faster/cheaper calls
       response_format: { type: "json_object" }
     });

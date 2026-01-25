@@ -96,6 +96,12 @@ export default function ArticleDetail() {
                 <FiZap className={summarizing ? "animate-pulse fill-emerald-400" : "fill-emerald-400"} />
                 <span className="text-xs font-black uppercase tracking-[0.3em]">Neural Summary</span>
               </div>
+              {/* Language Badge */}
+              {article?.summary && (
+                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400/60 border border-emerald-400/20 px-2 py-0.5 rounded-md">
+                  Output: {user?.preferredLanguage || 'English'}
+                </span>
+              )}
               
               {/* ✨ Read More Link */}
               <a href={article?.link} target="_blank" rel="noreferrer" className="text-slate-500 hover:text-white transition-colors">

@@ -52,22 +52,39 @@ const markAsRead = async (req, res) => {
 };
 
 // ✅ Secure Manual Summary
+// controllers/articleController.js
+
 const triggerManualSummary = async (req, res) => {
   try {
+    // 1. Article aur User dono ka data fetch karein
     const article = await Article.findOne({ _id: req.params.id, userId: req.user.id });
-    if (!article) return res.status(404).json({ message: "Article not found" });
+    if (!article) {
+      return res.status(404).json({ message: "Article not found" });
+    }
 
-    if (article.summary) return res.json({ summary: article.summary });
+    // Agar summary pehle se hai, toh wahi bhej do (Optional: agar aap translation har baar chahte hain toh ise hata dein)
+    if (article.summary) {
+      return res.json({ summary: article.summary, keywords: article.keywords });
+    }
 
-    const aiData = await generateSummaryAndKeywords(article.content);
+    const user = await User.findById(req.user.id);
+    const targetLanguage = user.preferredLanguage || 'English'; // Default to English if not set
+
+    // 2. AI Service ko target language ke saath call karein
+    const aiData = await generateSummaryAndKeywords(article.content, targetLanguage);
+
     if (aiData) {
+      // 3. Translated summary aur keywords ko database mein save karein
       article.summary = aiData.summary;
       article.keywords = aiData.keywords;
       await article.save();
+
       return res.json(aiData);
     }
+
     res.status(500).json({ message: "AI generation failed" });
   } catch (err) {
+    console.error("Manual Summary Error:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 };

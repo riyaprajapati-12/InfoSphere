@@ -1,3 +1,4 @@
+// src/context/AuthContext.jsx
 import { createContext, useEffect, useState } from "react";
 import API from "../api/axios";
 import { useNavigate } from "react-router-dom";
@@ -8,15 +9,20 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const fetchUser = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    API.get("/api/users/me", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => setUser(res.data))
-      .catch(() => logout());
+    try {
+      const res = await API.get("/api/users/me");
+      setUser(res.data); // Backend se aane wala preferredLanguage ab yahan save hoga
+    } catch (error) {
+      logout();
+    }
+  };
+
+  useEffect(() => {
+    fetchUser();
   }, []);
 
   const logout = () => {
@@ -26,7 +32,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, logout }}>
+    <AuthContext.Provider value={{ user, setUser, logout, fetchUser }}>
       {children}
     </AuthContext.Provider>
   );

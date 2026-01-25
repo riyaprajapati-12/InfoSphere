@@ -62,6 +62,12 @@ const userSchema = new mongoose.Schema({
   enum: ['instant', 'daily', 'none'],
   default: 'instant'
 },
+// models/user.js mein add karein
+preferredLanguage: {
+  type: String,
+  default: 'English', // Default language
+  enum: ['English', 'Hindi', 'Spanish', 'French', 'German'] // Jo languages aap dena chahte hain
+},
 
   // 🔹 Auth helpers
   otp: {
