@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import API from "../api/axios";
 import { motion } from "framer-motion";
-import { FiBell, FiInfo, FiTrash2, FiShield, FiArrowLeft, FiZap, FiActivity } from "react-icons/fi";
+import { FiBell, FiInfo, FiTrash2, FiShield, FiArrowLeft, FiZap, FiActivity, FiGlobe } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
 const Settings = () => {
