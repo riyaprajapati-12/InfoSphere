@@ -5,8 +5,9 @@ import { motion, useScroll, useSpring, AnimatePresence } from "framer-motion";
 import { FiArrowLeft, FiClock, FiShare2, FiZap, FiExternalLink, FiHash, FiLoader, FiCpu } from "react-icons/fi";
 
 export default function ArticleDetail() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+ const { user } = useContext(AuthContext); 
+const { id } = useParams();
+const navigate = useNavigate();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [summarizing, setSummarizing] = useState(false); // New state for AI trigger
