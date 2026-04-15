@@ -37,6 +37,7 @@ const signup = async (req, res) => {
 
     // 🔥 AWAIT EMAIL SENDING (Blocking)
     // Agar ye fail hua toh seedhe niche wale catch block mein jayega
+    console.log('yaha tk sb thik h almost')
     await sendEmail({
       email: newUser.email,
       subject: "OTP Verification",
@@ -52,7 +53,7 @@ const signup = async (req, res) => {
 
   } catch (error) {
     console.error("SIGNUP DEBUG ERROR:", error.message);
-    console.log('getting error sending otp')
+    
     // Frontend ko ab real error dikhega
     return res.status(500).json({
       message: error.message || "Server error during signup",
