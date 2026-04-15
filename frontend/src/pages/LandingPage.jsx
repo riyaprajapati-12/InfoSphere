@@ -144,14 +144,14 @@ export default function LandingPage() {
             onClick={() => navigate("/signup")}
             className="group relative px-10 py-5 bg-white text-black rounded-2xl font-bold text-lg hover:scale-105 transition-all shadow-xl"
           >
-            Get Started Free
+            SIGNUP
             <div className="absolute inset-0 rounded-2xl bg-emerald-500 blur-xl opacity-0 group-hover:opacity-25 transition-opacity" />
           </button>
           <button
             onClick={() => navigate("/login")}
             className="px-10 py-5 bg-white/5 border border-white/10 rounded-2xl font-bold text-lg hover:bg-white/10 transition-all backdrop-blur-md"
           >
-            Member Login
+            LOGIN
           </button>
         </motion.div>
 
