@@ -53,11 +53,11 @@ const Navbar = () => {
         </div>
 
         {/* Desktop Links */}
-        <div className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-400 uppercase tracking-widest">
+        {/* <div className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-400 uppercase tracking-widest">
           <a href="#" className="hover:text-emerald-400 transition-colors">Feeds</a>
           <a href="#" className="hover:text-emerald-400 transition-colors">Vault</a>
           <a href="#" className="hover:text-emerald-400 transition-colors">AI Insights</a>
-        </div>
+        </div> */}
 
         {/* Profile Section */}
         <div className="relative">
@@ -80,9 +80,7 @@ const Navbar = () => {
               <p className="text-xs font-bold text-white leading-none mb-1">
                 {user?.name || "Member"}
               </p>
-              <p className="text-[10px] text-emerald-400 font-medium tracking-tighter uppercase opacity-80">
-                Premium Plan
-              </p>
+              
             </div>
             <FiChevronDown className={`text-slate-500 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
           </motion.div>
@@ -106,7 +104,7 @@ const Navbar = () => {
                     </p>
                   </div>
 
-                  <div className="space-y-1">
+                  {/* <div className="space-y-1">
                     <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-300 hover:bg-white/5 hover:text-white transition-all text-sm font-bold">
                       <FiUser className="text-emerald-400" />
                       View Profile
@@ -115,7 +113,7 @@ const Navbar = () => {
                       <FiSettings className="text-emerald-400" />
                       Settings
                     </button>
-                  </div>
+                  </div> */}
 
                   <div className="mt-2 pt-2 border-t border-white/5">
                     <button
