@@ -15,14 +15,14 @@ const Article = require('../models/article');
 // userController.js mein signup function ka updated part
 const signup = async (req, res) => {
   const { email, password, name } = req.body;
-
+  console.log({email,password,name})
   try {
     let user = await User.findOne({ email });
-
+    console.log('What is error .....')
     if (user && user.isVerified) {
       return res.status(400).json({ message: "User already exists" });
     }
-
+    console.log('waht is error1....')
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = otpGenerator.generate(6, { digits: true, upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
 
