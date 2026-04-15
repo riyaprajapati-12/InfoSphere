@@ -83,7 +83,7 @@ const ManageFeeds = () => {
                     </div>
                     <div className="truncate">
                       <p className="font-bold text-white tracking-tight truncate">
-                        {feed.name || "Untitled Source"}
+                        {feed.title.split(' ')[0] || "Untitled Source"}
                       </p>
                       <p className="text-[10px] text-slate-500 font-mono truncate max-w-[200px] mt-1 italic">
                         {feed.feedUrl}
