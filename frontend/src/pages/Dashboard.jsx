@@ -67,9 +67,7 @@ export default function Dashboard() {
                 <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em]">
                   System Online
                 </span>
-                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest italic">
-                  v2.0 Neural Engine
-                </span>
+                
               </div>
 
               {/* Dynamic Greeting */}

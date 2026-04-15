@@ -19,20 +19,35 @@ const RecentArticles = () => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
 
+  // 1. Function to mark article as read in backend
+  const handleArticleClick = async (articleId) => {
+    try {
+      // Call the PATCH route you created in the backend
+      await API.patch(`/api/articles/${articleId}/read`, {}, { withCredentials: true });
+      
+      // Move to the article page
+      navigate(`/article/${articleId}`);
+    } catch (err) {
+      console.error("Interest tracking failed:", err);
+      // Navigate anyway so the user can still read the article
+      navigate(`/article/${articleId}`);
+    }
+  };
+
   const fetchArticles = async (reset = false) => {
     try {
       setLoading(true);
       const params = { page, limit: 10 };
-     // Check karein ki URL konsa use karna hai
-    let endpoint = "/api/articles";
-    if (tab === "personalized") {
-      endpoint = "/api/feeds/personalized"; // ✨ Backend route
-    } else {
-      if (tab === "read") params.isRead = true;
-      if (tab === "unread") params.isRead = false;
-    }
+      let endpoint = "/api/articles";
 
-    const res = await API.get(endpoint, { params, withCredentials: true });
+      if (tab === "personalized") {
+        endpoint = "/api/feeds/personalized";
+      } else {
+        if (tab === "read") params.isRead = true;
+        if (tab === "unread") params.isRead = false;
+      }
+
+      const res = await API.get(endpoint, { params, withCredentials: true });
       const newArticles = res.data.articles || [];
 
       setArticles((prev) => (reset ? newArticles : [...prev, ...newArticles]));
@@ -108,7 +123,8 @@ const RecentArticles = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
                 whileHover={{ scale: 1.01, backgroundColor: "rgba(255,255,255,0.03)" }}
-                onClick={() => navigate(`/article/${article._id}`)}
+                // 2. Updated onClick handler
+                onClick={() => handleArticleClick(article._id)}
                 className="group relative flex justify-between items-center bg-black/20 border border-white/5 p-6 rounded-[2rem] cursor-pointer transition-all border-l-4 border-l-transparent hover:border-l-emerald-500"
               >
                 <div className="flex-1 pr-6">
