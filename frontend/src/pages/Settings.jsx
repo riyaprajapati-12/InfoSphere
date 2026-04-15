@@ -1,24 +1,23 @@
 import React, { useState, useEffect, useContext } from "react";
 import API from "../api/axios";
 import { motion } from "framer-motion";
-import { FiBell, FiInfo, FiTrash2, FiShield, FiArrowLeft, FiZap, FiActivity, FiGlobe } from "react-icons/fi";
+import { FiBell, FiInfo, FiShield, FiArrowLeft } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+
 const Settings = () => {
   const [pref, setPref] = useState("instant");
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [language, setLanguage] = useState("English");
-  const { user, fetchUser } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
-  API.get("/api/users/me").then((res) => {
-    setPref(res.data.notificationPreference || "instant");
-    setIsConnected(res.data.telegramConnected);
-    setLanguage(res.data.preferredLanguage || "English"); // Language load
-  });
-}, []);
+    API.get("/api/users/me").then((res) => {
+      setPref(res.data.notificationPreference || "instant");
+      setIsConnected(res.data.telegramConnected);
+    });
+  }, []);
 
   const handleUpdatePreference = async (newPref) => {
     setPref(newPref);
@@ -29,7 +28,7 @@ const Settings = () => {
     }
   };
 
-  const disconnectTelegram = async () => {
+  const disconnectTelegram = async (req, res) => {
     if (window.confirm("Are you sure you want to disconnect Telegram sync?")) {
       setLoading(true);
       try {
@@ -42,16 +41,6 @@ const Settings = () => {
       }
     }
   };
-
-  const handleLanguageChange = async (newLang) => {
-  setLanguage(newLang);
-  try {
-    await API.post("/api/users/settings", { preferredLanguage: newLang });
-    if (fetchUser) await fetchUser(); // Backend update
-  } catch (err) {
-    console.error("Language update failed");
-  }
-};
 
   return (
     <div className="min-h-screen bg-[#0D1117] text-slate-200 p-8 md:p-16">
@@ -69,24 +58,6 @@ const Settings = () => {
         </header>
 
         <div className="space-y-10">
-        <section className="bg-[#161B22]/60 backdrop-blur-2xl border border-white/10 p-8 rounded-[3rem]">
-  <div className="flex items-center gap-3 mb-8">
-    <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
-      <FiGlobe size={24} />
-    </div>
-    <h3 className="text-xl font-bold text-white">Neural Language</h3>
-  </div>
-  <select 
-    value={language}
-    onChange={(e) => handleLanguageChange(e.target.value)}
-    className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 px-6 text-slate-300 focus:outline-none focus:border-emerald-500/40"
-  >
-    <option value="English">English</option>
-    <option value="Hindi">Hindi (हिन्दी)</option>
-    <option value="Spanish">Spanish</option>
-    <option value="French">French</option>
-  </select>
-</section>
           
           {/* 1. Notification Frequency */}
           <section className="bg-[#161B22]/60 backdrop-blur-2xl border border-white/10 p-8 rounded-[3rem]">
