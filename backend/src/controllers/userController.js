@@ -38,11 +38,11 @@ const signup = async (req, res) => {
     // 🔥 AWAIT EMAIL SENDING (Blocking)
     // Agar ye fail hua toh seedhe niche wale catch block mein jayega
     console.log('yaha tk sb thik h almost')
-    await sendEmail({
-      email: newUser.email,
-      subject: "OTP Verification",
-      message: `Your OTP for registration is ${otp}`,
-    });
+    // await sendEmail({
+    //   email: newUser.email,
+    //   subject: "OTP Verification",
+    //   message: `Your OTP for registration is ${otp}`,
+    // });
 
     // Email success hone par hi user save hoga
     await newUser.save();
