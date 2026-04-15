@@ -19,17 +19,20 @@ const RecentArticles = () => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  // 1. Function to mark article as read in backend
+  // Mark article as read and navigate
   const handleArticleClick = async (articleId) => {
     try {
-      // Call the PATCH route you created in the backend
+      // 1. Trigger interest tracking and read status in backend
       await API.patch(`/api/articles/${articleId}/read`, {}, { withCredentials: true });
       
-      // Move to the article page
+      // 2. Remove from local list instantly if we are in unread/latest tab
+      if (tab === "unread" || tab === "latest") {
+        setArticles(prev => prev.filter(a => a._id !== articleId));
+      }
+
       navigate(`/article/${articleId}`);
     } catch (err) {
-      console.error("Interest tracking failed:", err);
-      // Navigate anyway so the user can still read the article
+      console.error("Tracking failed:", err);
       navigate(`/article/${articleId}`);
     }
   };
@@ -40,8 +43,9 @@ const RecentArticles = () => {
       const params = { page, limit: 10 };
       let endpoint = "/api/articles";
 
+      // Toggle endpoint based on tab
       if (tab === "personalized") {
-        endpoint = "/api/feeds/personalized";
+        endpoint = "/api/feeds/personalized"; 
       } else {
         if (tab === "read") params.isRead = true;
         if (tab === "unread") params.isRead = false;
@@ -51,7 +55,7 @@ const RecentArticles = () => {
       const newArticles = res.data.articles || [];
 
       setArticles((prev) => (reset ? newArticles : [...prev, ...newArticles]));
-      setHasMore(page < res.data.totalPages);
+      setHasMore(page < (res.data.totalPages || 1));
     } catch (err) {
       console.error("Failed to fetch articles:", err);
     } finally {
@@ -73,7 +77,7 @@ const RecentArticles = () => {
   return (
     <div className="bg-[#161B22]/40 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl overflow-hidden">
       
-      {/* ─── HEADER & TABS ─── */}
+      {/* Header & Tabs */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
         <div>
           <h2 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
@@ -104,14 +108,11 @@ const RecentArticles = () => {
         </div>
       </div>
 
-      {/* ─── ARTICLES LIST ─── */}
+      {/* Article List */}
       <div className="space-y-4 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
         <AnimatePresence mode="popLayout">
           {articles.length === 0 && !loading ? (
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center py-20 text-slate-600"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-20 text-slate-600">
               <FiInbox size={48} className="mb-4 opacity-20" />
               <p className="font-bold uppercase tracking-widest text-xs">No Intel Found</p>
             </motion.div>
@@ -123,7 +124,6 @@ const RecentArticles = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
                 whileHover={{ scale: 1.01, backgroundColor: "rgba(255,255,255,0.03)" }}
-                // 2. Updated onClick handler
                 onClick={() => handleArticleClick(article._id)}
                 className="group relative flex justify-between items-center bg-black/20 border border-white/5 p-6 rounded-[2rem] cursor-pointer transition-all border-l-4 border-l-transparent hover:border-l-emerald-500"
               >
@@ -138,22 +138,14 @@ const RecentArticles = () => {
                       </span>
                     )}
                   </div>
-                  
                   <h3 className="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors line-clamp-1 tracking-tight">
                     {article.title}
                   </h3>
-
-                  <p className="text-slate-400 text-sm mt-2 line-clamp-2 font-medium leading-relaxed opacity-70">
+                  <p className="text-slate-400 text-sm mt-2 line-clamp-2 font-medium opacity-70">
                     {article.description || "No summary available for this intelligence report."}
                   </p>
-
-                  <div className="flex items-center gap-4 mt-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                    <span className="flex items-center gap-1"><FiClock /> 5 min read</span>
-                    <span>• {new Date(article.createdAt).toLocaleDateString()}</span>
-                  </div>
                 </div>
-
-                <div className="flex items-center justify-center w-12 h-12 rounded-full border border-white/10 group-hover:border-emerald-500/50 group-hover:bg-emerald-500 group-hover:text-black transition-all">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full border border-white/10 group-hover:bg-emerald-500 group-hover:text-black transition-all">
                   <FiArrowRight size={20} />
                 </div>
               </motion.div>
@@ -161,17 +153,13 @@ const RecentArticles = () => {
           )}
         </AnimatePresence>
 
-        {/* ─── PAGINATION / LOADING ─── */}
         <div className="pt-6">
           {loading ? (
             <div className="flex justify-center py-4">
               <div className="w-6 h-6 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
             </div>
           ) : hasMore && articles.length > 0 ? (
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              className="w-full py-4 rounded-2xl border border-white/5 text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white/5 hover:text-white transition-all"
-            >
+            <button onClick={() => setPage((p) => p + 1)} className="w-full py-4 rounded-2xl border border-white/5 text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] hover:bg-white/5 transition-all">
               Load More Intelligence
             </button>
           ) : null}

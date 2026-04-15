@@ -60,32 +60,46 @@ const deleteFeed = async (req, res) => {
 
 
 
+// controllers/articleController.js (or feedController.js)
+
 const getPersonalizedFeed = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
 
-    // User ke top interest keywords nikalo
-    const sortedKeywords = [...user.keywordProfile.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .map(entry => entry[0])
-      .slice(0, 5);
+    // 1. Safety Check: If keywordProfile doesn't exist, create an empty Map
+    const profile = user.keywordProfile || new Map();
 
-    // Agar user naya hai aur koi history nahi hai
+    // 2. Extract Top Interests
+    const sortedKeywords = Array.from(profile.entries())
+      .sort((a, b) => b[1] - a[1]) // Sort by frequency/score
+      .map(entry => entry[0])      // Get the keyword string
+      .slice(0, 10);               // Take top 10 for better variety
+
+    let articles;
+
+    // 3. Logic: If no history, show latest. If history exists, match keywords.
     if (sortedKeywords.length === 0) {
-      const trending = await Article.find({ userId: req.user.id }) // Article model use karein
-        .sort({ publishedAt: -1 })
+      articles = await Article.find() // Global latest if no profile
+        .sort({ createdAt: -1 })
         .limit(20);
-      return res.json(trending);
+    } else {
+      articles = await Article.find({
+        keywords: { $in: sortedKeywords }, // Match any of the top keywords
+        isRead: false                      // Only show what they haven't seen
+      })
+      .sort({ createdAt: -1 })
+      .limit(30);
     }
 
-    // Personalized articles dikhao jo user ke interests se match karein
-    const feed = await Article.find({
-      userId: req.user.id,
-      keywords: { $in: sortedKeywords }
-    }).sort({ publishedAt: -1 });
+    // 4. CRITICAL: Return the format Frontend expects
+    res.json({ 
+      articles: articles,
+      totalPages: 1, 
+      currentPage: 1 
+    });
 
-    res.json(feed);
   } catch (error) {
+    console.error("Personalization Error:", error);
     res.status(500).json({ message: "Error fetching personalized feed" });
   }
 };
